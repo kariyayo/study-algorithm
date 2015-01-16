@@ -2,6 +2,12 @@
 def contains(x, xs)
   if xs.length == 0 then
     false
+  elsif xs.length == 1 then
+    if xs[0] == x then
+      true
+    else
+      false
+    end
   else
     n = xs.length / 2
     if xs[n] == x then
