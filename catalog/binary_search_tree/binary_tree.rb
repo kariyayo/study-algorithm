@@ -6,13 +6,20 @@ class Node
   end
 
   def insert(v)
-    if @v == v then
-      Node.new(v, @left, @right)
-    elsif v < @v
-      Node.new(@v, @left.insert(v), @right)
+    if v < @v
+      if @left.instance_of? Empty
+        @left = Node.new(v, Empty.new, Empty.new)
+      else
+        @left.insert(v)
+      end
     elsif v > @v
-      Node.new(@v, @left, @right.insert(v))
+      if @right.instance_of? Empty
+        @right = Node.new(v, Empty.new, Empty.new)
+      else
+        @right.insert(v)
+      end
     end
+    self
   end
 
   def contains(v)
@@ -31,10 +38,6 @@ class Node
 end
 
 class Empty
-  def insert(v)
-    Node.new(v, Empty.new, Empty.new)
-  end
-
   def contains(v)
     false
   end
