@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
-
-var sc = bufio.NewScanner(os.Stdin)
 
 func SelectionSort(n int, as []int) {
 	count := 0
@@ -27,11 +26,15 @@ func SelectionSort(n int, as []int) {
 			count = count + 1
 		}
 	}
-	fmt.Println(strings.Join(as[:], " "))
+	printArray(as)
 	fmt.Println(count)
 }
 
-func nextInt() {
+func printArray(as []int) {
+	fmt.Println(strings.Trim(fmt.Sprint(as), "[]"))
+}
+
+func nextInt(sc *bufio.Scanner) int {
 	sc.Scan()
 	n, err := strconv.Atoi(sc.Text())
 	if err != nil {
@@ -41,11 +44,12 @@ func nextInt() {
 }
 
 func main() {
+	sc := bufio.NewScanner(os.Stdin)
 	sc.Split(bufio.ScanWords)
-	n := nextInt()
+	n := nextInt(sc)
 	as := []int{}
 	for i := 0; i < n; i++ {
-		x := nextInt()
+		x := nextInt(sc)
 		as = append(as, x)
 	}
 	SelectionSort(n, as)
