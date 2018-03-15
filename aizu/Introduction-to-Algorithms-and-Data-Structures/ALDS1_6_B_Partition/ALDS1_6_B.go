@@ -10,7 +10,7 @@ import (
 
 func partition(xs []int, p int, r int) int {
 	x := xs[r]
-	as := xs[:len(xs)-1]
+	as := xs[:r]
 	i := p - 1 // 前パーティションの最後の要素のポインタ
 	j := p
 	for j < len(as) {
