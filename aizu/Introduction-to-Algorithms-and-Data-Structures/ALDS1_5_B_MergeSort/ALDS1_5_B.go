@@ -23,7 +23,7 @@ func merge(as []int, bs []int) []int {
 			break
 		}
 		count++
-		if as[i] < bs[j] {
+		if as[i] <= bs[j] {
 			if as[i] < max {
 				result = append(result, as[i])
 				i++
