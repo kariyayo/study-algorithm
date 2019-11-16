@@ -8,49 +8,47 @@ import (
 	"strings"
 )
 
-func SelectionSort(n int, as []int) {
-	count := 0
-	for i := 0; i < n; i++ {
-		min := as[i]
-		min_index := i
-		for j := i + 1; j < n; j++ {
-			if min > as[j] {
-				min = as[j]
-				min_index = j
+func SelectionSort(n uint8, as []uint8) {
+	cnt := 0
+	for i := uint8(0); i < n; i++ {
+		minj := i
+		for j := i; j < n; j++ {
+			if as[j] < as[minj] {
+				minj = j
 			}
 		}
-		if min_index > i {
-			a := as[min_index]
-			as[min_index] = as[i]
-			as[i] = a
-			count = count + 1
+		if minj > i {
+			tmp := as[minj]
+			as[minj] = as[i]
+			as[i] = tmp
+			cnt++
 		}
 	}
 	printArray(as)
-	fmt.Println(count)
+	fmt.Println(cnt)
 }
 
-func printArray(as []int) {
+func printArray(as []uint8) {
 	fmt.Println(strings.Trim(fmt.Sprint(as), "[]"))
 }
 
-func nextInt(sc *bufio.Scanner) int {
+func nextInt(sc *bufio.Scanner) uint8 {
 	sc.Scan()
 	n, err := strconv.Atoi(sc.Text())
 	if err != nil {
 		panic(err)
 	}
-	return n
+	return uint8(n)
 }
 
 func main() {
 	sc := bufio.NewScanner(os.Stdin)
 	sc.Split(bufio.ScanWords)
 	n := nextInt(sc)
-	as := []int{}
-	for i := 0; i < n; i++ {
+	as := make([]uint8, n)
+	for i := uint8(0); i < n; i++ {
 		x := nextInt(sc)
-		as = append(as, x)
+		as[i] = x
 	}
 	SelectionSort(n, as)
 }
