@@ -5,140 +5,143 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
-type Node struct {
-	Value int
-	Next  int
-	Prev  int
-}
-
-type DoublyLinkedList struct {
-	ns   [2000001]*Node
-	head int
-	tail int
-	size int
-}
-
-func (l *DoublyLinkedList) insert(x int) {
-	if l.head == cap(l.ns)-1 {
-		l.head = 0
-	} else {
-		l.head++
-	}
-	if l.size == 0 {
-		l.ns[l.head] = &Node{
-			Value: x,
-			Next:  -1,
-			Prev:  -1,
-		}
-		l.tail = l.head
-	} else {
-		var next int
-		if l.head == 0 {
-			next = cap(l.ns) - 1
-		} else {
-			next = l.head - 1
-		}
-		l.ns[l.head] = &Node{
-			Value: x,
-			Next:  next,
-			Prev:  -1,
-		}
-		l.ns[next].Prev = l.head
-	}
-	l.size++
-}
-
-func (l *DoublyLinkedList) delete(x int) {
-	n := l.ns[l.head]
-	for x != n.Value && n.Next != -1 {
-		n = l.ns[n.Next]
-	}
-	if x == n.Value {
-		// 削除
-		if n.Prev > -1 {
-			l.ns[n.Prev].Next = n.Next
-		}
-		if n.Next > -1 {
-			l.ns[n.Next].Prev = n.Prev
-		}
-	}
-	// 先頭要素が削除された場合
-	if n.Prev == -1 {
-		l.head = n.Next
-	}
-	// 最後尾要素が削除された場合
-	if n.Next == -1 {
-		l.tail = n.Prev
-	}
-	l.size--
-}
-
-func (l *DoublyLinkedList) deleteFirst() {
-	n := l.ns[l.head]
-	if n.Next > -1 {
-		l.ns[n.Next].Prev = n.Prev
-	}
-	l.head = n.Next
-	l.size--
-}
-
-func (l *DoublyLinkedList) deleteLast() {
-	n := l.ns[l.tail]
-	l.tail = n.Prev
-	if n.Prev > -1 {
-		l.ns[n.Prev].Next = -1
-	}
-	l.size--
-}
-
-func (l *DoublyLinkedList) println() {
-	n := l.ns[l.head]
-	fmt.Print(n.Value)
-	for n.Next != -1 {
-		n = l.ns[n.Next]
-		fmt.Print(" ")
-		fmt.Print(n.Value)
-	}
-	fmt.Println("")
-}
-
-func nextStr(sc *bufio.Scanner) string {
-	sc.Scan()
-	s := sc.Text()
-	return s
-}
-
-func nextInt(sc *bufio.Scanner) int {
-	sc.Scan()
-	n, err := strconv.Atoi(sc.Text())
+func toInt(s string) int {
+	n, err := strconv.Atoi(s)
 	if err != nil {
 		panic(err)
 	}
 	return n
 }
 
+type Node struct {
+	value int
+	prev  *Node
+	next  *Node
+}
+
+func (n Node) String() string {
+	prev := 0
+	if n.prev != nil {
+		prev = n.prev.value
+	}
+	next := 0
+	if n.next != nil {
+		next = n.next.value
+	}
+	return fmt.Sprintf("prev:%d, value:%d, next:%d", prev, n.value, next)
+}
+
+type DoublyLinkedList struct {
+	start *Node
+	last  *Node
+	size  int
+}
+
+func (l *DoublyLinkedList) insert(x int) {
+	node := &Node{x, nil, l.start}
+	if l.size == 0 {
+		l.start = node
+		l.last = node
+	} else if l.size != 0 {
+		node.next.prev = node
+		l.start = node
+	}
+	l.size++
+}
+
+func (l *DoublyLinkedList) delete(x int) {
+	if l.size == 0 {
+		return
+	} else if l.size == 1 {
+		if l.start.value == x {
+			l.start = nil
+			l.last = nil
+			l.size = 0
+		}
+		return
+	} else {
+		for node := l.start; node != nil; node = node.next {
+			if node.value == x {
+				if node.prev != nil {
+					node.prev.next = node.next
+				} else {
+					l.start = node.next
+				}
+				if node.next != nil {
+					node.next.prev = node.prev
+				} else {
+					l.last = node.prev
+				}
+				l.size--
+				return
+			}
+		}
+	}
+}
+
+func (l *DoublyLinkedList) deleteFirst() {
+	if l.size == 1 {
+		l.start = nil
+		l.last = nil
+		l.size = 0
+	} else if l.size > 1 {
+		l.start.next.prev = nil
+		l.start = l.start.next
+		l.size--
+	}
+}
+
+func (l *DoublyLinkedList) deleteLast() {
+	if l.size == 1 {
+		l.start = nil
+		l.last = nil
+		l.size = 0
+	} else if l.size > 1 {
+		l.last.prev.next = nil
+		l.last = l.last.prev
+		l.size--
+	}
+}
+
+func (l DoublyLinkedList) String() string {
+	node := l.start
+	xs := make([]string, l.size)
+	for i := 0; i < l.size; i++ {
+		xs[i] = fmt.Sprintf("%d", node.value)
+		node = node.next
+	}
+	return strings.Join(xs, " ")
+}
+
 func main() {
 	sc := bufio.NewScanner(os.Stdin)
 	sc.Split(bufio.ScanWords)
+	sc.Scan()
+	n := toInt(sc.Text())
 
-	var l DoublyLinkedList
-	n := nextInt(sc)
+	l := DoublyLinkedList{}
+
 	for i := 0; i < n; i++ {
-		s := nextStr(sc)
-		switch s {
+		sc.Scan()
+		command := sc.Text()
+		switch command {
 		case "insert":
-			x := nextInt(sc)
-			l.insert(x)
+			sc.Scan()
+			v := toInt(sc.Text())
+			l.insert(v)
 		case "delete":
-			x := nextInt(sc)
-			l.delete(x)
+			sc.Scan()
+			v := toInt(sc.Text())
+			l.delete(v)
 		case "deleteFirst":
 			l.deleteFirst()
 		case "deleteLast":
 			l.deleteLast()
 		}
 	}
-	l.println()
+
+	fmt.Println(l)
 }
