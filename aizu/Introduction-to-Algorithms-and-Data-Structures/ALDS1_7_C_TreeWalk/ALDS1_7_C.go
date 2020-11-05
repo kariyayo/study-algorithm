@@ -17,128 +17,100 @@ func NewTree(size int) *Tree {
 }
 
 func (t *Tree) append(id int, left int, right int) {
+	var lNode *Node
+	if left != -1 {
+		if t.nodes[left] == nil {
+			lNode = &Node{id: left, parent: -1}
+			t.nodes[left] = lNode
+		} else {
+			lNode = t.nodes[left]
+		}
+		lNode.parent = id
+	}
+	var rNode *Node
+	if right != -1 {
+		if t.nodes[right] == nil {
+			rNode = &Node{id: right, parent: -1}
+			t.nodes[right] = rNode
+		} else {
+			rNode = t.nodes[right]
+		}
+		rNode.parent = id
+	}
 	var node *Node
 	if t.nodes[id] == nil {
-		node = &Node{id: id, left: left, right: right}
+		node = &Node{id: id, parent: -1, left: lNode, right: rNode}
 		t.nodes[id] = node
 	} else {
 		node = t.nodes[id]
-		node.left = left
-		node.right = right
 	}
-	for _, childID := range []int{left, right} {
-		if childID == -1 {
-			continue
-		}
-		if t.nodes[childID] == nil {
-			child := &Node{id: childID}
-			t.nodes[childID] = child
-		}
-		t.nodes[childID].parent = node
-	}
-}
-
-func (t *Tree) Println() {
-	for i := 0; i < len(t.nodes); i++ {
-		t.nodes[i].Println()
-	}
+	node.left = lNode
+	node.right = rNode
 }
 
 func (t *Tree) root() int {
 	node := t.nodes[0]
-	for node.parent != nil {
-		node = node.parent
+	for node.parent != -1 {
+		node = t.nodes[node.parent]
 	}
 	return node.id
 }
 
-func (t *Tree) Preorder() {
-	t.preorder(t.root())
-}
-
-func (t *Tree) preorder(id int) {
-	if id < 0 {
-		return
-	}
-	node := t.nodes[id]
-	fmt.Printf(" %d", node.id)
-	t.preorder(node.left)
-	t.preorder(node.right)
-}
-
-func (t *Tree) Ineorder() {
-	t.inorder(t.root())
-}
-
-func (t *Tree) inorder(id int) {
-	if id < 0 {
-		return
-	}
-	node := t.nodes[id]
-	t.inorder(node.left)
-	fmt.Printf(" %d", node.id)
-	t.inorder(node.right)
-}
-
-func (t *Tree) Postorder() {
-	t.postorder(t.root())
-}
-
-func (t *Tree) postorder(id int) {
-	if id < 0 {
-		return
-	}
-	node := t.nodes[id]
-	t.postorder(node.left)
-	t.postorder(node.right)
-	fmt.Printf(" %d", node.id)
+func (t *Tree) Walk(visitor TreeVisitor) {
+	t.nodes[t.root()].accept(visitor)
 }
 
 type Node struct {
 	id     int
-	parent *Node
-	left   int
-	right  int
+	parent int
+	left   *Node
+	right  *Node
 }
 
-func (n *Node) Println() {
-	parentID := -1
-	if n.parent != nil {
-		parentID = n.parent.id
+func (n *Node) accept(visitor TreeVisitor) {
+	if n == nil {
+		visitor.VisitLeaf()
+	} else {
+		visitor.VisitNode(n)
 	}
+}
 
-	sibling := -1
-	if n.parent != nil {
-		if n.parent.left != -1 && n.parent.left != n.id {
-			sibling = n.parent.left
-		} else if n.parent.right != -1 && n.parent.right != n.id {
-			sibling = n.parent.right
-		}
-	}
+type TreeVisitor interface {
+	VisitLeaf()
+	VisitNode(node *Node)
+}
 
-	degree := 0
-	if n.left != -1 {
-		degree++
-	}
-	if n.right != -1 {
-		degree++
-	}
+type preOrderVisitor struct{}
 
-	depth := 0
-	p := n.parent
-	for p != nil {
-		depth++
-		p = p.parent
-	}
+func (v *preOrderVisitor) VisitLeaf() {
+	return
+}
+func (v *preOrderVisitor) VisitNode(node *Node) {
+	fmt.Printf(" %d", node.id)
+	node.left.accept(v)
+	node.right.accept(v)
+}
 
-	nodeType := "internal node"
-	if n.parent == nil {
-		nodeType = "root"
-	} else if degree == 0 {
-		nodeType = "leaf"
-	}
+type inOrderVisitor struct{}
 
-	fmt.Printf("node %d: parent = %d, sibling = %d, degree = %d, depth = %d, %s\n", n.id, parentID, sibling, degree, depth, nodeType)
+func (v *inOrderVisitor) VisitLeaf() {
+	return
+}
+func (v *inOrderVisitor) VisitNode(node *Node) {
+	node.left.accept(v)
+	fmt.Printf(" %d", node.id)
+	node.right.accept(v)
+}
+
+type postOrderVisitor struct{}
+
+func (v *postOrderVisitor) VisitLeaf() {
+	return
+}
+func (v *postOrderVisitor) VisitNode(node *Node) {
+	node.left.accept(v)
+	node.right.accept(v)
+	fmt.Printf(" %d", node.id)
 }
 
 func nextInt(sc *bufio.Scanner) int {
@@ -162,12 +134,12 @@ func main() {
 		tree.append(id, left, right)
 	}
 	fmt.Println("Preorder")
-	tree.Preorder()
+	tree.Walk(&preOrderVisitor{})
 	fmt.Println("")
 	fmt.Println("Inorder")
-	tree.Ineorder()
+	tree.Walk(&inOrderVisitor{})
 	fmt.Println("")
 	fmt.Println("Postorder")
-	tree.Postorder()
+	tree.Walk(&postOrderVisitor{})
 	fmt.Println("")
 }
