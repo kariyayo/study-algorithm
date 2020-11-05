@@ -56,8 +56,8 @@ func (t *Tree) root() int {
 	return node.id
 }
 
-func (t *Tree) Walk(visitor TreeVisitor) {
-	t.nodes[t.root()].accept(visitor)
+func (t *Tree) Walk(visitor TreeVisitor) Doc {
+	return t.nodes[t.root()].accept(visitor)
 }
 
 type Node struct {
@@ -67,50 +67,54 @@ type Node struct {
 	right  *Node
 }
 
-func (n *Node) accept(visitor TreeVisitor) {
+func (n *Node) accept(visitor TreeVisitor) Doc {
 	if n == nil {
-		visitor.VisitLeaf()
-	} else {
-		visitor.VisitNode(n)
+		return visitor.VisitLeaf()
 	}
+	return visitor.VisitNode(n)
 }
 
+type Doc string
+
 type TreeVisitor interface {
-	VisitLeaf()
-	VisitNode(node *Node)
+	VisitLeaf() Doc
+	VisitNode(node *Node) Doc
 }
 
 type preOrderVisitor struct{}
 
-func (v *preOrderVisitor) VisitLeaf() {
-	return
+func (v *preOrderVisitor) VisitLeaf() Doc {
+	return ""
 }
-func (v *preOrderVisitor) VisitNode(node *Node) {
-	fmt.Printf(" %d", node.id)
-	node.left.accept(v)
-	node.right.accept(v)
+func (v *preOrderVisitor) VisitNode(node *Node) Doc {
+	s := fmt.Sprintf(" %d", node.id)
+	l := node.left.accept(v)
+	r := node.right.accept(v)
+	return Doc(s) + l + r
 }
 
 type inOrderVisitor struct{}
 
-func (v *inOrderVisitor) VisitLeaf() {
-	return
+func (v *inOrderVisitor) VisitLeaf() Doc {
+	return ""
 }
-func (v *inOrderVisitor) VisitNode(node *Node) {
-	node.left.accept(v)
-	fmt.Printf(" %d", node.id)
-	node.right.accept(v)
+func (v *inOrderVisitor) VisitNode(node *Node) Doc {
+	l := node.left.accept(v)
+	s := fmt.Sprintf(" %d", node.id)
+	r := node.right.accept(v)
+	return l + Doc(s) + r
 }
 
 type postOrderVisitor struct{}
 
-func (v *postOrderVisitor) VisitLeaf() {
-	return
+func (v *postOrderVisitor) VisitLeaf() Doc {
+	return ""
 }
-func (v *postOrderVisitor) VisitNode(node *Node) {
-	node.left.accept(v)
-	node.right.accept(v)
-	fmt.Printf(" %d", node.id)
+func (v *postOrderVisitor) VisitNode(node *Node) Doc {
+	l := node.left.accept(v)
+	r := node.right.accept(v)
+	s := fmt.Sprintf(" %d", node.id)
+	return l + r + Doc(s)
 }
 
 func nextInt(sc *bufio.Scanner) int {
@@ -134,12 +138,9 @@ func main() {
 		tree.append(id, left, right)
 	}
 	fmt.Println("Preorder")
-	tree.Walk(&preOrderVisitor{})
-	fmt.Println("")
+	fmt.Println(tree.Walk(&preOrderVisitor{}))
 	fmt.Println("Inorder")
-	tree.Walk(&inOrderVisitor{})
-	fmt.Println("")
+	fmt.Println(tree.Walk(&inOrderVisitor{}))
 	fmt.Println("Postorder")
-	tree.Walk(&postOrderVisitor{})
-	fmt.Println("")
+	fmt.Println(tree.Walk(&postOrderVisitor{}))
 }
