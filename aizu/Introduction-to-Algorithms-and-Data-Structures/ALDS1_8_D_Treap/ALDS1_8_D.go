@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 )
 
 type Node struct {
@@ -111,29 +110,6 @@ func (node *Node) delete(x int) *Node {
 	return n.delete(x)
 }
 
-func (node *Node) replaceSelfTo(n *Node) {
-	// 置き換え対象の親を、自分の親にする
-	if n != nil {
-		n.parent = node.parent
-	}
-	// 自分の親の子を、置き換え対象にする
-	if node.parent.left != nil && node.parent.left.key == node.key {
-		node.parent.left = n
-	} else {
-		node.parent.right = n
-	}
-}
-
-func (node *Node) getMin() int {
-	n := node
-	result := node.key
-	for n.left != nil {
-		result = n.left.key
-		n = n.left
-	}
-	return result
-}
-
 type Tree struct {
 	root *Node
 }
@@ -153,12 +129,7 @@ func (t *Tree) find(x int) bool {
 }
 
 func (t *Tree) delete(x int) {
-	t.root.delete(x)
-	node := t.root
-	for node.parent != nil {
-		node = node.parent
-	}
-	t.root = node
+	t.root = t.root.delete(x)
 }
 
 type Visitor interface {
@@ -166,7 +137,7 @@ type Visitor interface {
 }
 
 type InorderVisitor struct {
-	ss []string
+	w *bufio.Writer
 }
 
 func (i *InorderVisitor) visitNode(node *Node) {
@@ -174,29 +145,21 @@ func (i *InorderVisitor) visitNode(node *Node) {
 		return
 	}
 	node.left.accept(i)
-	i.ss = append(i.ss, fmt.Sprintf("%d", node.key))
+	i.w.WriteString(fmt.Sprintf(" %d", node.key))
 	node.right.accept(i)
 }
 
-func (i *InorderVisitor) String() string {
-	return strings.Join(i.ss, " ")
-}
-
 type PreorderVisitor struct {
-	ss []string
+	w *bufio.Writer
 }
 
 func (p *PreorderVisitor) visitNode(node *Node) {
 	if node == nil {
 		return
 	}
-	p.ss = append(p.ss, fmt.Sprintf("%d", node.key))
+	p.w.WriteString(fmt.Sprintf(" %d", node.key))
 	node.left.accept(p)
 	node.right.accept(p)
-}
-
-func (p *PreorderVisitor) String() string {
-	return strings.Join(p.ss, " ")
 }
 
 func nextString(sc *bufio.Scanner) string {
@@ -227,12 +190,14 @@ func main() {
 			t.insert(v, p)
 		case "print":
 			if t.root != nil {
-				inorderVisitor := &InorderVisitor{}
+				inorderVisitor := &InorderVisitor{w: bufio.NewWriter(os.Stdout)}
 				t.root.accept(inorderVisitor)
-				fmt.Printf(" %s\n", inorderVisitor)
-				preorderVisitor := &PreorderVisitor{}
+				inorderVisitor.w.Flush()
+				fmt.Println()
+				preorderVisitor := &PreorderVisitor{w: bufio.NewWriter(os.Stdout)}
 				t.root.accept(preorderVisitor)
-				fmt.Printf(" %s\n", preorderVisitor)
+				preorderVisitor.w.Flush()
+				fmt.Println()
 			}
 		case "find":
 			v := nextInt(sc)
