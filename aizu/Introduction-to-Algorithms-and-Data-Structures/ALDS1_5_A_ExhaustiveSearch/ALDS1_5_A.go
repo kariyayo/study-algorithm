@@ -7,24 +7,33 @@ import (
 	"strconv"
 )
 
-var as []int
-
-func solve(m int, i int) string {
+func solve(as []int, m int, i int) bool {
 	if m == 0 {
-		return "yes"
+		return true
 	}
 	if i > len(as)-1 {
-		return "no"
+		return false
 	}
-	res := solve(m-as[i], i+1)
-	if res == "yes" {
-		return "yes"
+	res := solve(as, m-as[i], i+1)
+	if res {
+		return true
 	}
-	res = solve(m, i+1)
-	if res == "yes" {
-		return "yes"
+	res = solve(as, m, i+1)
+	if res {
+		return true
 	}
-	return "no"
+	return false
+}
+
+func solver(as []int, ms []int) {
+	for _, m := range ms {
+		result := solve(as, m, 0)
+		if result {
+			fmt.Println("yes")
+		} else {
+			fmt.Println("no")
+		}
+	}
 }
 
 func nextInt(sc *bufio.Scanner) int {
@@ -41,19 +50,15 @@ func main() {
 	sc.Split(bufio.ScanWords)
 
 	n := nextInt(sc)
-	for n > 0 {
-		as = append(as, nextInt(sc))
-		n--
+	as := make([]int, n)
+	for i := 0; i < n; i++ {
+		as[i] = nextInt(sc)
 	}
 	q := nextInt(sc)
-	var ms []int
-	for q > 0 {
-		ms = append(ms, nextInt(sc))
-		q--
+	ms := make([]int, q)
+	for i := 0; i < q; i++ {
+		ms[i] = nextInt(sc)
 	}
 
-	for _, m := range ms {
-		result := solve(m, 0)
-		fmt.Println(result)
-	}
+	solver(as, ms)
 }
