@@ -59,6 +59,32 @@ func solver(start, last int) int {
 	return min
 }
 
+var dp [][]int
+
+func solver2() int {
+	n := len(ms)
+	for i := 0; i < n; i++ {
+		dp[i][i] = 0
+	}
+	// 乗算対象の行列の数を増やしていく
+	for l := 2; l <= n; l++ {
+		for i := 0; i <= n-l; i++ {
+			j := i + l - 1 // 対象の範囲を [i:j] とする
+			dp[i][j] = 1000001
+
+			// [i:j]の範囲で最小となる区切りを探す
+			// ex. min( M1(M2M3M4), (M1M2)(M3M4), (M1M2M3)M4 )
+			for k := i; k < j; k++ {
+				a := dp[i][k] + dp[k+1][j] + ms[i].rows()*ms[k].cols()*ms[j].cols()
+				if a < dp[i][j] {
+					dp[i][j] = a
+				}
+			}
+		}
+	}
+	return dp[0][n-1]
+}
+
 func nextInt(sc *bufio.Scanner) int {
 	sc.Scan()
 	n, err := strconv.Atoi(sc.Text())
@@ -79,11 +105,14 @@ func main() {
 		ms[i] = newMatrix(rows, cols)
 	}
 	memo = make([][]int, n)
+	dp = make([][]int, n)
 	for i := 0; i < n; i++ {
 		memo[i] = make([]int, n)
+		dp[i] = make([]int, n)
 	}
 
-	result := solver(0, n-1)
+	// result := solver(0, n-1)
+	result := solver2()
 	fmt.Println(result)
 }
 
