@@ -16,14 +16,18 @@ type Vertex struct {
 	f  int
 }
 
+func (v *Vertex) visited() bool {
+	return v.d != -1
+}
+
 func search(g []*Vertex, t int, vertex *Vertex) int {
-	if vertex.d != -1 {
-		return t
-	}
 	vertex.d = t + 1
 	f := vertex.d
 	for _, vID := range vertex.vs {
 		next := g[vID]
+		if next.visited() {
+			continue
+		}
 		res := search(g, f, next)
 		if res > f {
 			f = res
@@ -36,6 +40,9 @@ func search(g []*Vertex, t int, vertex *Vertex) int {
 func solver(g []*Vertex) {
 	t := 0
 	for _, vertex := range g[1:] {
+		if vertex.visited() {
+			continue
+		}
 		t = search(g, t, vertex)
 	}
 	for _, vertex := range g[1:] {
