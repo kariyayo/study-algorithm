@@ -5,71 +5,42 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
-
-type Tree struct {
-	nodes []*Node
-}
-
-func NewTree(size int) *Tree {
-	nodes := make([]*Node, size)
-	return &Tree{nodes}
-}
-
-func (t *Tree) append(id int, left int, right int) {
-	var node *Node
-	if t.nodes[id] == nil {
-		node = &Node{id: id, left: left, right: right, height: 0}
-		t.nodes[id] = node
-	} else {
-		node = t.nodes[id]
-		node.left = left
-		node.right = right
-	}
-	for _, childID := range []int{left, right} {
-		if childID == -1 {
-			continue
-		}
-		if t.nodes[childID] == nil {
-			child := &Node{id: childID}
-			t.nodes[childID] = child
-		}
-		t.nodes[childID].parent = node
-
-		if t.nodes[childID].height >= t.nodes[id].height {
-			// 自分のheightを更新
-			t.nodes[id].height = t.nodes[childID].height + 1
-
-			// 自分のheightを更新したので親のheightも更新する必要があるかもしれない
-			n := t.nodes[id]
-			p := n.parent
-			for p != nil {
-				if p.height > n.height {
-					break
-				}
-				p.height = n.height + 1
-				n = p
-				p = n.parent
-			}
-		}
-	}
-}
-
-func (t *Tree) Println() {
-	for i := 0; i < len(t.nodes); i++ {
-		t.nodes[i].Println()
-	}
-}
 
 type Node struct {
 	id     int
 	parent *Node
-	left   int
-	right  int
-	height int
+	left   *Node
+	right  *Node
 }
 
-func (n *Node) Println() {
+func (n *Node) depth() int {
+	d := 0
+	p := n.parent
+	for p != nil {
+		d++
+		p = p.parent
+	}
+	return d
+}
+
+func (n *Node) height() int {
+	lHeight := 0
+	if n.left != nil {
+		lHeight = n.left.height() + 1
+	}
+	rHeight := 0
+	if n.right != nil {
+		rHeight = n.right.height() + 1
+	}
+	if lHeight > rHeight {
+		return lHeight
+	}
+	return rHeight
+}
+
+func (n *Node) String() string {
 	parentID := -1
 	if n.parent != nil {
 		parentID = n.parent.id
@@ -77,36 +48,86 @@ func (n *Node) Println() {
 
 	sibling := -1
 	if n.parent != nil {
-		if n.parent.left != -1 && n.parent.left != n.id {
-			sibling = n.parent.left
-		} else if n.parent.right != -1 && n.parent.right != n.id {
-			sibling = n.parent.right
+		if n.parent.left != nil && n.parent.left.id != n.id {
+			sibling = n.parent.left.id
+		} else if n.parent.right != nil && n.parent.right.id != n.id {
+			sibling = n.parent.right.id
 		}
 	}
 
 	degree := 0
-	if n.left != -1 {
+	if n.left != nil {
 		degree++
 	}
-	if n.right != -1 {
+	if n.right != nil {
 		degree++
 	}
 
-	depth := 0
-	p := n.parent
-	for p != nil {
-		depth++
-		p = p.parent
-	}
-
-	nodeType := "internal node"
+	typeS := "internal node"
 	if n.parent == nil {
-		nodeType = "root"
-	} else if degree == 0 {
-		nodeType = "leaf"
+		typeS = "root"
+	} else if n.left == nil && n.right == nil {
+		typeS = "leaf"
 	}
 
-	fmt.Printf("node %d: parent = %d, sibling = %d, degree = %d, depth = %d, height = %d, %s\n", n.id, parentID, sibling, degree, depth, n.height, nodeType)
+	return fmt.Sprintf("node %d: parent = %d, sibling = %d, degree = %d, depth = %d, height = %d, %s", n.id, parentID, sibling, degree, n.depth(), n.height(), typeS)
+}
+
+func main() {
+	sc := bufio.NewScanner(os.Stdin)
+	sc.Split(bufio.ScanWords)
+	n := nextInt(sc)
+	ns := make([]*Node, n)
+	for ni := 0; ni < n; ni++ {
+		nodeID := nextInt(sc)
+		if ns[nodeID] == nil {
+			ns[nodeID] = &Node{id: nodeID}
+		}
+
+		leftID := nextInt(sc)
+		if leftID != -1 {
+			if ns[leftID] == nil {
+				ns[leftID] = &Node{id: leftID}
+			}
+			ns[leftID].parent = ns[nodeID]
+			ns[nodeID].left = ns[leftID]
+		}
+
+		rightID := nextInt(sc)
+		if rightID != -1 {
+			if ns[rightID] == nil {
+				ns[rightID] = &Node{id: rightID}
+			}
+			ns[rightID].parent = ns[nodeID]
+			ns[nodeID].right = ns[rightID]
+		}
+	}
+	for _, node := range ns {
+		fmt.Println(node)
+	}
+}
+
+// ----------
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func nextString(sc *bufio.Scanner) string {
+	sc.Scan()
+	return sc.Text()
+}
+
+func nextNumber(sc *bufio.Scanner) float64 {
+	sc.Scan()
+	f, err := strconv.ParseFloat(sc.Text(), 32)
+	if err != nil {
+		panic(err)
+	}
+	return f
 }
 
 func nextInt(sc *bufio.Scanner) int {
@@ -118,16 +139,10 @@ func nextInt(sc *bufio.Scanner) int {
 	return n
 }
 
-func main() {
-	sc := bufio.NewScanner(os.Stdin)
-	sc.Split(bufio.ScanWords)
-	n := nextInt(sc)
-	tree := NewTree(n)
-	for i := 0; i < n; i++ {
-		id := nextInt(sc)
-		left := nextInt(sc)
-		right := nextInt(sc)
-		tree.append(id, left, right)
-	}
-	tree.Println()
+func printArray(xs []int) {
+	fmt.Println(strings.Trim(fmt.Sprint(xs), "[]"))
+}
+
+func debugPrintf(format string, a ...interface{}) {
+	fmt.Fprintf(os.Stderr, format, a...)
 }
