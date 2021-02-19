@@ -8,44 +8,78 @@ import (
 	"strings"
 )
 
-var i = 0
+type Node struct {
+	id     int
+	parent *Node
+	left   *Node
+	right  *Node
+}
 
-func solve(n int, ans []int, preorder, inorder []int) []int {
-	inorderIndex := -1
-	for j := 0; j < len(inorder); j++ {
-		v := inorder[j]
-		if preorder[i] == v {
-			inorderIndex = j
+var pos = 0
+var preOrder []int
+
+func reconstruct(inOrder []int, parent *Node) *Node {
+	if len(inOrder) == 0 {
+		return nil
+	}
+
+	id := preOrder[pos]
+	node := &Node{id: id, parent: parent}
+	pos++
+
+	rootIdx := 0
+	for i, v := range inOrder {
+		if id == v {
+			rootIdx = i
+			break
 		}
 	}
-
-	leftTree := inorder[:inorderIndex]
-	rightTree := inorder[inorderIndex+1:]
-
-	switch len(leftTree) {
-	case 0:
-		// NOP
-	case 1:
-		i++
-		ans = append(ans, leftTree[0])
-	default:
-		i++
-		ans = solve(n, ans, preorder, leftTree)
+	node.left = reconstruct(inOrder[:rootIdx], node)
+	node.right = reconstruct(inOrder[rootIdx+1:], node)
+	if parent == nil {
+		fmt.Printf("%d\n", node.id)
+	} else {
+		fmt.Printf("%d ", node.id)
 	}
+	return node
+}
 
-	switch len(rightTree) {
-	case 0:
-		// NOP
-	case 1:
-		i++
-		ans = append(ans, rightTree[0])
-	default:
-		i++
-		ans = solve(n, ans, preorder, rightTree)
+func main() {
+	sc := bufio.NewScanner(os.Stdin)
+	sc.Split(bufio.ScanWords)
+	n := nextInt(sc)
+	preOrder = make([]int, n)
+	inOrder := make([]int, n)
+	for i := 0; i < n; i++ {
+		preOrder[i] = nextInt(sc)
 	}
+	for i := 0; i < n; i++ {
+		inOrder[i] = nextInt(sc)
+	}
+	reconstruct(inOrder, nil)
+}
 
-	ans = append(ans, inorder[inorderIndex])
-	return ans
+// ----------
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func nextString(sc *bufio.Scanner) string {
+	sc.Scan()
+	return sc.Text()
+}
+
+func nextNumber(sc *bufio.Scanner) float64 {
+	sc.Scan()
+	f, err := strconv.ParseFloat(sc.Text(), 32)
+	if err != nil {
+		panic(err)
+	}
+	return f
 }
 
 func nextInt(sc *bufio.Scanner) int {
@@ -61,22 +95,6 @@ func printArray(xs []int) {
 	fmt.Println(strings.Trim(fmt.Sprint(xs), "[]"))
 }
 
-func main() {
-	sc := bufio.NewScanner(os.Stdin)
-	sc.Split(bufio.ScanWords)
-	n := nextInt(sc)
-	preorder := make([]int, n)
-	inorder := make([]int, n)
-	for i := 0; i < n; i++ {
-		v := nextInt(sc)
-		preorder[i] = v
-	}
-	for i := 0; i < n; i++ {
-		v := nextInt(sc)
-		inorder[i] = v
-	}
-
-	ans := []int{}
-	ans = solve(n, ans, preorder, inorder)
-	printArray(ans)
+func debugPrintf(format string, a ...interface{}) {
+	fmt.Fprintf(os.Stderr, format, a...)
 }
