@@ -9,36 +9,19 @@ import (
 	"strings"
 )
 
-func sum(n int) int {
-	result := 0
-	for i := 1; i <= n; i++ {
-		result += i
-	}
-	return result
-}
-
-func check(dp [][]int, l, r int) {
-	for i := 0; i <= l; i++ {
-		for j := 0; j <= r; j++ {
-			if (l != i || r != j) && dp[l][r] == dp[i][j] {
-				fmt.Println("Yes")
-				fmt.Printf("%d", j-i+1)
-				for x := i; x <= j; x++ {
-					fmt.Printf(" %d", x+1)
-				}
-				fmt.Println()
-				fmt.Printf("%d", r-l+1)
-				for x := l; x <= r; x++ {
-					fmt.Printf(" %d", x+1)
-				}
-				fmt.Println()
-				os.Exit(0)
-			}
+func intToPattern(x int) []int {
+	a := []int{}
+	i := 1
+	for x > 0 {
+		if x&1 != 0 {
+			a = append(a, i)
 		}
+		i++
+		x = x >> 1
 	}
+	return a
 }
 
-// FIXME test_17.txtがACしてない
 func main() {
 	sc := bufio.NewScanner(os.Stdin)
 	buf := make([]byte, 0)
@@ -51,17 +34,26 @@ func main() {
 		A[i] = nextInt(sc)
 	}
 
-	dp := make([][]int, N)
-	for i := 0; i < N; i++ {
-		dp[i] = make([]int, N)
-	}
-
-	for l := 0; l < N; l++ {
+	N = min(N, 8)
+	memo := make([]int, 200)
+	for bit := 0; bit < (1 << N); bit++ {
 		sum := 0
-		for r := l; r < N; r++ {
-			sum += A[r]
-			dp[l][r] = sum % 200
-			check(dp, l, r)
+		for i := 0; i < N; i++ {
+			if bit&(1<<i) != 0 {
+				sum = (sum + A[i]) % 200
+			}
+		}
+		if memo[sum] == 0 {
+			memo[sum] = bit
+		} else {
+			fmt.Println("Yes")
+			B := intToPattern(bit)
+			fmt.Printf("%d ", len(B))
+			printArray(B)
+			C := intToPattern(memo[sum])
+			fmt.Printf("%d ", len(C))
+			printArray(C)
+			return
 		}
 	}
 	fmt.Println("No")
@@ -155,7 +147,13 @@ func printArray(xs []int) {
 }
 
 func debugPrintArray(xs []int) {
-	fmt.Fprintf(os.Stderr, "\n---\n%v\n", strings.Trim(fmt.Sprint(xs), "[]"))
+	fmt.Fprintln(os.Stderr, strings.Trim(fmt.Sprint(xs), "[]"))
+}
+
+func debugPrintTable(table [][]int) {
+	for i := 0; i < len(table); i++ {
+		debugPrintArray(table[i])
+	}
 }
 
 func debugPrintf(format string, a ...interface{}) {
