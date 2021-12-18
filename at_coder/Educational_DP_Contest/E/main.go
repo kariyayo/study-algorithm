@@ -19,47 +19,92 @@ func main() {
 
 	N := nextInt(sc)
 	W := nextInt(sc)
-	WS := make([]int, N)
-	VS := make([]int, N)
+
+	vMax := 100000
+	ws := makeInts(N+1, 0)
+	vs := makeInts(N+1, 0)
 	dp := make([][]int, N+1)
-	vMax := 100100
-	defaltL := make([]int, vMax+1)
-	for i := 0; i < vMax+1; i++ {
-		defaltL[i] = INF
+	dp[0] = makeInts(vMax+1, INF)
+	for i := 1; i <= N; i++ {
+		dp[i] = makeInts(vMax+1, INF)
+		ws[i] = nextInt(sc)
+		vs[i] = nextInt(sc)
 	}
-	dp[0] = make([]int, vMax+1)
-	copy(dp[0], defaltL)
-	for i := 0; i < N; i++ {
-		WS[i] = nextInt(sc)
-		VS[i] = nextInt(sc)
-		dp[i+1] = make([]int, vMax+1)
-		copy(dp[i+1], defaltL)
-	}
+
 	dp[0][0] = 0
-
-	for i := 0; i < N; i++ {
-		for v := 0; v < vMax; v++ {
-			// 品物を選ばない場合
-			dp[i+1][v] = min(dp[i+1][v], dp[i][v])
-
-			// 品物を選ぶ場合の重さ
-			if v-VS[i] >= 0 {
-				dp[i+1][v] = min(dp[i+1][v], WS[i]+dp[i][v-VS[i]])
+	for i := 1; i <= N; i++ {
+		for sumV := 0; sumV <= vMax; sumV++ {
+			// i番目を選ぶ場合の容量
+			if sumV-vs[i] >= 0 {
+				dp[i][sumV] = min(dp[i][sumV], dp[i-1][sumV-vs[i]]+ws[i])
 			}
+			// i番目を選ばない場合の容量
+			dp[i][sumV] = min(dp[i][sumV], dp[i-1][sumV])
 		}
 	}
-
-	res := 0
-	for v := 0; v < vMax; v++ {
-		if dp[N][v] <= W {
-			res = v
+	ans := 0
+	for sumV := 0; sumV <= vMax; sumV++ {
+		if dp[N][sumV] <= W {
+			ans = sumV
 		}
 	}
-	fmt.Println(res)
+	fmt.Println(ans)
 }
 
 // ----------
 // ----------
+
+// Scans
+
+func nextString(sc *bufio.Scanner) string {
+	sc.Scan()
+	return sc.Text()
+}
+
+func nextNumber(sc *bufio.Scanner) float64 {
+	sc.Scan()
+	f, err := strconv.ParseFloat(sc.Text(), 32)
+	if err != nil {
+		panic(err)
+	}
+	return f
+}
+
+func nextInt(sc *bufio.Scanner) int {
+	sc.Scan()
+	n, err := strconv.Atoi(sc.Text())
+	if err != nil {
+		panic(err)
+	}
+	return n
+}
+
+func nextInt64(sc *bufio.Scanner) int64 {
+	sc.Scan()
+	n, err := strconv.ParseInt(sc.Text(), 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	return n
+}
+
+// Convert
+
+func toInt(s string) int {
+	x, err := strconv.Atoi(s)
+	if err != nil {
+		panic(err)
+	}
+	return x
+}
+
+func toInt64(s string) int64 {
+	x, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	return x
+}
 
 // table
 func createTable(h int, w int) [][]int {
@@ -78,6 +123,58 @@ func removeByte(slice []byte, s int) []byte {
 
 func removeInt(slice []int, s int) []int {
 	return append(slice[:s], slice[s+1:]...)
+}
+
+// key以上の要素のうちMINである要素の添字を返す
+// ref. https://gist.github.com/bati11/1fa106711d17ddea6ab39c43e989fea3
+func lowerBound(xs []int, key int) int {
+	if len(xs) == 0 {
+		return 0
+	}
+	l, r := 0, len(xs)-1
+	if xs[r] < key {
+		// key以上の要素が存在しない
+		return r + 1
+	}
+	for r-l > 1 {
+		mid := l + (r-l)/2
+		v := xs[mid]
+		if key <= v {
+			r = mid
+		} else {
+			l = mid
+		}
+	}
+	if xs[l] >= key {
+		return l
+	}
+	return r
+}
+
+// keyより大きな要素のうちMINである要素の添字を返す
+// ref. https://gist.github.com/bati11/1fa106711d17ddea6ab39c43e989fea3
+func upperBound(xs []int, key int) int {
+	if len(xs) == 0 {
+		return 0
+	}
+	l, r := 0, len(xs)-1
+	if xs[r] <= key {
+		// keyより大きい要素が存在しない
+		return r + 1
+	}
+	for r-l > 1 {
+		mid := l + (r-l)/2
+		v := xs[mid]
+		if key < v {
+			r = mid
+		} else {
+			l = mid
+		}
+	}
+	if xs[l] > key {
+		return l
+	}
+	return r
 }
 
 // Pair
@@ -152,22 +249,54 @@ func (q *PriorityQueue) Pop() interface{} {
 	return item
 }
 
-// Convert
-
-func toInt(s string) int {
-	x, err := strconv.Atoi(s)
-	if err != nil {
-		panic(err)
-	}
-	return x
+// Union-Find
+type UnionFind struct {
+	parents []int
+	size    []int
 }
 
-func toInt64(s string) int64 {
-	x, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		panic(err)
+func (u *UnionFind) root(x int) int {
+	if u.parents[x] == -1 {
+		return x
 	}
-	return x
+	p := u.root(u.parents[x])
+	// 親を根で置き換えてしまう
+	//   経路圧縮で効率化 O(N) -> O(logN)
+	u.parents[x] = p
+	return p
+}
+
+func (u *UnionFind) Unite(x, y int) {
+	xRoot := u.root(x)
+	yRoot := u.root(y)
+	// 既に同じグループの場合は何もしない
+	if xRoot == yRoot {
+		return
+	}
+	// サイズが小さい方のグループを大きい方のグループに統合する
+	//   union by size による効率化 O(logN) -> O(α(N))
+	if u.size[xRoot] > u.size[yRoot] {
+		u.parents[yRoot] = xRoot
+		u.size[xRoot] = u.size[xRoot] + u.size[yRoot]
+	} else {
+		u.parents[xRoot] = yRoot
+		u.size[yRoot] = u.size[yRoot] + u.size[xRoot]
+	}
+}
+
+func (u *UnionFind) Same(x, y int) bool {
+	return u.root(x) == u.root(y)
+}
+
+func NewUnionFind(n int) *UnionFind {
+	parents := make([]int, n)
+	for i := 0; i < n; i++ {
+		parents[i] = -1
+	}
+	// sizeの大小比較ができれば良いので特に初期化していないが、
+	// 値自体に意味がある場合は 1 で初期化する
+	size := make([]int, n)
+	return &UnionFind{parents: parents, size: size}
 }
 
 // Combination
@@ -220,6 +349,16 @@ func permutations(arr []byte) [][]byte {
 
 // Utilities
 
+func makeInts(n int, defaultValue int) []int {
+	result := make([]int, n)
+	if defaultValue != 0 {
+		for i := 0; i < n; i++ {
+			result[i] = defaultValue
+		}
+	}
+	return result
+}
+
 func min(a, b int) int {
 	if a < b {
 		return a
@@ -259,40 +398,6 @@ func abs(a int) int {
 	return a
 }
 
-// Scans
-
-func nextString(sc *bufio.Scanner) string {
-	sc.Scan()
-	return sc.Text()
-}
-
-func nextNumber(sc *bufio.Scanner) float64 {
-	sc.Scan()
-	f, err := strconv.ParseFloat(sc.Text(), 32)
-	if err != nil {
-		panic(err)
-	}
-	return f
-}
-
-func nextInt(sc *bufio.Scanner) int {
-	sc.Scan()
-	n, err := strconv.Atoi(sc.Text())
-	if err != nil {
-		panic(err)
-	}
-	return n
-}
-
-func nextInt64(sc *bufio.Scanner) int64 {
-	sc.Scan()
-	n, err := strconv.ParseInt(sc.Text(), 10, 64)
-	if err != nil {
-		panic(err)
-	}
-	return n
-}
-
 // Debug print
 
 func printArray(xs []int) {
@@ -310,5 +415,5 @@ func debugPrintTable(table [][]int) {
 }
 
 func debugPrintf(format string, a ...interface{}) {
-	fmt.Fprintf(os.Stdout, format, a...)
+	fmt.Fprintf(os.Stderr, format, a...)
 }
